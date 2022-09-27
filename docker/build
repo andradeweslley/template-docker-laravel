@@ -61,7 +61,7 @@ function convert_seconds() {
     if [[ $1 -ge 3600 ]]; then
         printf "Executed in %02d hour(s), %02d minute(s) and %02d second(s)\n" $hours $minutes $seconds
     elif [[ $1 -ge 60 ]]; then
-        printf "Executed in %02d minute(s) and %02d seconds\n" $minutes $seconds
+        printf "Executed in %02d minute(s) and %02d second(s)\n" $minutes $seconds
     else 
         printf "Executed in %02d second(s)\n" $seconds
     fi
@@ -213,7 +213,7 @@ if $CLEAN_PROJECT; then
 else 
     # Copy env file
     cp ../src/.env.example ../src/.env
-    
+
     # Adjust env file
     sed -i '' "s/APP_NAME=.*/APP_NAME=${APP_NAME}/" ../src/.env
     sed -i '' "s/APP_URL=.*/APP_URL=http:\/\/localhost:${APP_PORT}/" ../src/.env
