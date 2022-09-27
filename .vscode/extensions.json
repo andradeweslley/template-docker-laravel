@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "eamodio.gitlens",
+        "onecentlin.laravel-blade",
+        "onecentlin.laravel5-snippets",
+        "bmewburn.vscode-intelephense-client",
+        "ronvanderheijden.phpdoc-generator",
+        "MrChetan.phpstorm-parameter-hints-in-vscode"
+    ]
+}
