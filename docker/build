@@ -1,0 +1,226 @@
+#!/bin/sh
+# set -eo pipefail
+
+# Description: Configure Docker Environment for Build
+# Author: Weslley Andrade
+# ASCII Art from https://patorjk.com/software/taag/#p=display&f=Standard
+
+
+# !!! WARNING: 
+# !!!       This script was made in a macOS environment with zsh shell, 
+# !!!       some functions may not work in other environments!
+
+echo "  ____             _                ____             __ _                       ";
+echo " |  _ \  ___   ___| | _____ _ __   / ___|___  _ __  / _(_) __ _ _   _ _ __ ___  ";
+echo " | | | |/ _ \ / __| |/ / _ \ '__| | |   / _ \| '_ \| |_| |/ _\` | | | | '__/ _ \ ";
+echo " | |_| | (_) | (__|   <  __/ |    | |__| (_) | | | |  _| | (_| | |_| | | |  __/ ";
+echo " |____/ \___/ \___|_|\_\___|_|     \____\___/|_| |_|_| |_|\__, |\__,_|_|  \___| ";
+echo "                                                          |___/                 ";
+
+#### variables
+# boolean to control the flow
+CONTINUE=true
+
+#### functions 
+# function to help with params
+function help() {
+    echo ""
+    echo "Usage: $0 -a app-name -p 8000 -d 3306 -v \"8.1\""
+    echo "\t-a [required] App Name = The application name the Docker will create your container"
+    echo "\t-p [optional] App Port = What port should be exposed to access the application. Default is 8000"
+    echo "\t-d [optional] Database Port = What port should be exposed to access the database. Default is 3306"
+    echo "\t-v [optional] PHP Version = What version of PHP should install in container. Default is 8.1"
+   
+    end_script;
+}
+
+# function to test if port is available
+function test_port() {
+    if ! [ -z "$(lsof -i:$1)" ]; then
+        echo "Port $1 not available. Use another port.";
+
+        CONTINUE=false;
+    fi
+}
+
+# function to show error in screen
+function end_script() {
+	echo "\n"
+	read -p "Press any key to exit..."
+	exit;
+}
+
+# Check if .env file exists to run docker down
+if [ -f .env ]; then
+    # Load env
+    source .env
+
+    # Stops project if exists
+    if [ "$(docker ps -a | grep ${APP_NAME}-app)" ]; then
+        docker-compose -p ${APP_NAME} down
+    fi
+fi
+
+#### misc
+# Get arguments 
+while getopts a:p:d:v: flag
+do
+    case "${flag}" in
+        a) APP_NAME=${OPTARG};;
+        p) APP_PORT=${OPTARG};;
+        d) DB_PORT=${OPTARG};;
+        v) PHP_VERSION=${OPTARG};;
+        ?) help;;
+    esac
+done
+
+# print help in case APP_NAME is empty
+if [ -z "$APP_NAME" ]; then
+    echo "App name not informed";
+    help;
+fi
+
+# define APP_PORT if is empty
+if [ -z "$APP_PORT" ]; then
+    APP_PORT=8000;
+fi
+
+# define DB_PORT if is empty
+if [ -z "$DB_PORT" ]; then
+    DB_PORT=3306;
+fi
+
+# define PHP_VERSION if is empty
+if [ -z "$PHP_VERSION" ]; then
+    PHP_VERSION="8.1";
+fi
+
+# check if ports are available
+test_port $APP_PORT;
+test_port $DB_PORT;
+
+# if ports not available, stops run
+if ! $CONTINUE; then
+	echo "\nSome ports are not available. Change them before continue"
+	end_script;
+fi
+
+# save env vars to file
+rm -f .env
+echo "export APP_NAME=${APP_NAME}" >> .env
+echo "export APP_PORT=${APP_PORT}" >> .env
+echo "export DB_PORT=${DB_PORT}" >> .env
+echo "export PHP_VERSION=${PHP_VERSION}" >> .env
+
+# export variables
+source .env
+
+#### Main
+
+# Creates src folder if not exists
+if [ ! -d "../src" ]; then
+    mkdir ../src 
+fi
+
+# Define if is a clean installation
+CLEAN_PROJECT=true
+
+if [ "$(ls -A ../src)" ]; then
+    CLEAN_PROJECT=false
+fi
+
+# Create docker containers
+docker-compose -p ${APP_NAME} up -d --build
+
+if [ ! "$(docker ps -a | grep ${APP_NAME}-app)" ]; then
+    echo "Build project fail"
+    end_script;
+fi
+
+# @todo: change `docker exec` to run on Dockerfile 
+
+if $CLEAN_PROJECT; then
+    # Download framework
+    docker exec -it ${APP_NAME}-app composer create-project laravel/laravel project
+
+    if [ ! "$(ls -A ../src/project)" ]; then
+        echo "Failure to create project"
+        end_script;
+    fi
+
+    # Change file locations
+    cp -r ../src/project/. ../src/
+    rm -Rf ../src/project
+
+    # Adjust env example file
+    sed -i '' "s/APP_NAME=.*/APP_NAME=${APP_NAME}/" ../src/.env.example
+    sed -i '' "s/APP_URL=.*/APP_URL=http:\/\/localhost:${APP_PORT}/" ../src/.env.example
+    sed -i '' "s/DB_HOST=.*/DB_HOST=${APP_NAME}-db/" ../src/.env.example
+    sed -i '' "s/DB_PORT=.*/DB_PORT=3306/" ../src/.env.example
+    sed -i '' "s/DB_DATABASE=.*/DB_DATABASE=${APP_NAME}/" ../src/.env.example
+    sed -i '' "s/DB_USERNAME=.*/DB_USERNAME=root/" ../src/.env.example
+    sed -i '' "s/DB_PASSWORD=.*/DB_PASSWORD=root/" ../src/.env.example
+
+    # Copy to env
+    cp ../src/.env.example ../src/.env
+
+    # Copy files to project
+    cp ../.gitignore ../src/.gitignore
+    cp ../config/models.php ../src/config/models.php
+    cp ../config/code-quality/* ../src/
+    cp ../config/README.md ../
+
+    # Deletes config folder
+    rm -Rf config/
+
+    # Install packages
+    docker exec -it ${APP_NAME}-app composer require \
+        your-app-rocks/eloquent-uuid \
+        tucker-eric/eloquentfilter
+
+    # Adds plugins to trust list
+    docker exec -it ${APP_NAME}-app composer config --no-plugins allow-plugins.phpro/grumphp true
+    docker exec -it ${APP_NAME}-app composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+
+    # Install dev packages
+    docker exec -it ${APP_NAME}-app composer require --dev \
+        reliese/laravel \
+        phpstan/phpstan \
+        phpro/grumphp \
+        slevomat/coding-standard \
+        squizlabs/php_codesniffer \
+        nunomaduro/larastan
+else 
+    # Adjust env file
+    sed -i '' "s/APP_NAME=.*/APP_NAME=${APP_NAME}/" ../src/.env
+    sed -i '' "s/APP_URL=.*/APP_URL=http:\/\/localhost:${APP_PORT}/" ../src/.env
+    sed -i '' "s/DB_HOST=.*/DB_HOST=${APP_NAME}-db/" ../src/.env
+    sed -i '' "s/DB_PORT=.*/DB_PORT=3306/" ../src/.env
+    sed -i '' "s/DB_DATABASE=.*/DB_DATABASE=${APP_NAME}/" ../src/.env
+    sed -i '' "s/DB_USERNAME=.*/DB_USERNAME=root/" ../src/.env
+    sed -i '' "s/DB_PASSWORD=.*/DB_PASSWORD=root/" ../src/.env
+
+    # Install packages
+    docker exec -it ${APP_NAME}-app composer install
+fi
+
+# Disable Grump Sniff
+docker exec -it ${APP_NAME}-app vendor/bin/grumphp git:deinit 
+
+# Generates new app key
+docker exec -it ${APP_NAME}-app php artisan key:generate --ansi
+
+# Creates tables
+docker exec -it ${APP_NAME}-app php artisan migrate --force
+
+# Populates tables
+docker exec -it ${APP_NAME}-app php artisan db:seed --force
+
+
+echo ""
+echo "  _____ _       _     _              _ ";
+echo " |  ___(_)_ __ (_)___| |__   ___  __| |";
+echo " | |_  | | '_ \| / __| '_ \ / _ \/ _\` |";
+echo " |  _| | | | | | \__ \ | | |  __/ (_| |";
+echo " |_|   |_|_| |_|_|___/_| |_|\___|\__,_|";
+echo "                                       ";

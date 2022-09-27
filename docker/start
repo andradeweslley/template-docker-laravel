@@ -1,0 +1,20 @@
+#!/bin/sh
+# set -eo pipefail
+
+# Description: Configure Docker Environment
+# Author: Weslley Andrade
+# ASCII Art from https://patorjk.com/software/taag/#p=display&f=Standard
+
+# !!! WARNING: 
+# !!!       This script was made in a macOS environment with zsh shell, 
+# !!!       some functions may not work in other environments!
+
+# TODO: checke if .env exists
+
+# export variables
+source .env
+
+#### Main
+docker-compose --project-name ${APP_NAME} up -d --build
+
+echo "Started"
