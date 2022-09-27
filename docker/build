@@ -10,6 +10,8 @@
 # !!!       This script was made in a macOS environment with zsh shell, 
 # !!!       some functions may not work in other environments!
 
+SCRIPT_START="$(date +%s)"
+
 echo "  ____             _                ____             __ _                       ";
 echo " |  _ \  ___   ___| | _____ _ __   / ___|___  _ __  / _(_) __ _ _   _ _ __ ___  ";
 echo " | | | |/ _ \ / __| |/ / _ \ '__| | |   / _ \| '_ \| |_| |/ _\` | | | | '__/ _ \ ";
@@ -50,6 +52,24 @@ function end_script() {
 	exit;
 }
 
+# convert seconds to time
+function convert_seconds() {
+    ((hours=${1}/3600))
+    ((minutes=(${1}%3600)/60))
+    ((seconds=${1}%60))
+
+    if [[ $1 -ge 3600 ]]; then
+        printf "Executed in %02d hour(s), %02d minute(s) and %02d second(s)\n" $hours $minutes $seconds
+    elif [[ $1 -ge 60 ]]; then
+        printf "Executed in %02d minute(s) and %02d seconds\n" $minutes $seconds
+    else 
+        printf "Executed in %02d second(s)\n" $seconds
+    fi
+}
+#### End functions
+
+#### misc
+
 # Check if .env file exists to run docker down
 if [ -f .env ]; then
     # Load env
@@ -61,7 +81,6 @@ if [ -f .env ]; then
     fi
 fi
 
-#### misc
 # Get arguments 
 while getopts a:p:d:v: flag
 do
@@ -114,6 +133,7 @@ echo "export PHP_VERSION=${PHP_VERSION}" >> .env
 
 # export variables
 source .env
+#### End misc
 
 #### Main
 
@@ -191,6 +211,9 @@ if $CLEAN_PROJECT; then
         squizlabs/php_codesniffer \
         nunomaduro/larastan
 else 
+    # Copy env file
+    cp ../src/.env.example ../src/.env
+    
     # Adjust env file
     sed -i '' "s/APP_NAME=.*/APP_NAME=${APP_NAME}/" ../src/.env
     sed -i '' "s/APP_URL=.*/APP_URL=http:\/\/localhost:${APP_PORT}/" ../src/.env
@@ -224,3 +247,10 @@ echo " | |_  | | '_ \| / __| '_ \ / _ \/ _\` |";
 echo " |  _| | | | | | \__ \ | | |  __/ (_| |";
 echo " |_|   |_|_| |_|_|___/_| |_|\___|\__,_|";
 echo "                                       ";
+
+# Calculates execution time
+SCRIPT_END="$(date +%s)"
+RUNTIME=$(($SCRIPT_END-$SCRIPT_START))
+
+echo ""
+convert_seconds $RUNTIME
