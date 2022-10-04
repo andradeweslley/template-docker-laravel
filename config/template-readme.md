@@ -5,6 +5,8 @@
 ## Requisitos
 É necessário ter ter na sua máquina o [Docker](https://www.docker.com/get-started) e o [Docker Compose](https://docs.docker.com/compose/).
 
+Caso você esteja utilizando Windows, também será necessário o [Git For Windows](https://gitforwindows.org/).
+
 ## Instalação
 O primeiro passo é clonar este repositório para sua máquina em uma pasta. 
 
@@ -20,6 +22,7 @@ Execute o arquivo `build` com os parâmetros:
 
 - Parâmetro `d`: Porta para acesso ao banco de dados [Opcional; Padrão: 3306]
 
+> Se você estiver utilizando Windows, use o `Git BASH` para executar o arquivo.
 
 Exemplo: 
 ```bash
@@ -47,7 +50,7 @@ Também há algumas definições que podem ser seguidas:
 
     - `DELETE` para remover 
 
-- As rotas devem ter seus recursos sempre no plural. Ex: `GET https://dominio.com.br/companies/`
+- As rotas terem seus recursos no plural. Ex: `GET https://dominio.com.br/companies/`
 
 - O código ser 100% coberto por testes.
 
@@ -69,7 +72,7 @@ $ docker exec -i [nome_do_container] vendor/bin/phpstan
 ```
 
 ### Testes
-Para rodar os testes da aplicação, utilize o [phpunit](https://phpunit.de/), que já vem instalado:
+Para rodar os testes da aplicação, utilize o [`phpunit`](https://phpunit.de/), que já vem instalado:
 
 ```bash
 $ docker exec -i [nome_do_container] vendor/bin/phpunit

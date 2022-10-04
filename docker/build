@@ -188,7 +188,7 @@ if $CLEAN_PROJECT; then
     cp ../.gitignore ../src/.gitignore
     cp ../config/models.php ../src/config/models.php
     cp ../config/code-quality/* ../src/
-    cp ../config/README.md ../
+    cp ../config/template-readme.md ../README.md
 
     # Deletes config folder
     rm -Rf config/
