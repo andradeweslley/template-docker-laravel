@@ -191,7 +191,7 @@ if $CLEAN_PROJECT; then
     cp ../config/template-readme.md ../README.md
 
     # Deletes config folder
-    rm -Rf config/
+    rm -Rf ../config/
 
     # Install packages
     docker exec -it ${APP_NAME}-app composer require \
