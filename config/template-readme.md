@@ -58,24 +58,24 @@ Os comandos que podem ser utilizados estão listados abaixo.
 
 Verificar se a codificação está no padrão requirido.
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/phpcs
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/phpcs
 ```
 
 Corrigir os erros de codificação automaticamente (quando disponível) rode:
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/phpcbf
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/phpcbf
 ```
 
 Para verificar se há erros no código:
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/phpstan
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/phpstan
 ```
 
 ### Testes
 Para rodar os testes da aplicação, utilize o [`phpunit`](https://phpunit.de/), que já vem instalado:
 
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/phpunit
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/phpunit
 ```
 
 ### Informações adicionais
@@ -83,7 +83,7 @@ $ docker exec -i [nome_do_container] vendor/bin/phpunit
 Foi incluído a biblioteca [`reliese/laravel`](https://github.com/reliese/laravel) para geração de models.
 O comando que deve ser usado para gerar a model é:
 ```bash
-$ docker exec -i [nome_do_container] code:models --table=TABELA
+$ docker exec -i CONTAINER_APP_NAME code:models --table=TABELA
 ```
 
 > Importante: não rode esse comando sem o parâmetro `--table`, pois irá recriar as models para todas as tabelas e perder qualquer alteração feita nelas.
@@ -111,7 +111,7 @@ class ModelExample extends Model
 
 Para criar o filtro use o comando:
 ```bash
-$ docker exec -i [nome_do_container] php artisan model:filter NOME_DA_MODEL
+$ docker exec -i CONTAINER_APP_NAME php artisan model:filter NOME_DA_MODEL
 ```
 Esse comando criará um arquivo na pasta `app/Models/Filters` com o nome da model seguido por `Filter`. Ex: `app/Models/Filters/ModelExampleFilter.php`
 
@@ -128,13 +128,13 @@ ModelExample::filter(['name' => 'Test'])->get();
 Caso deseje rodar todas as checagens de qualidade de código que rodam no CI, rode o comando abaixo:
 
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/grumphp run
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/grumphp run
 ```
 
 Para ativar essas checagens automaticamente antes de cada commit, utilize o `git:init` do _grumphp_:
 
 ```bash
-$ docker exec -i [nome_do_container] vendor/bin/grumphp git:init
+$ docker exec -i CONTAINER_APP_NAME vendor/bin/grumphp git:init
 ```
 
 Para checar em detalhes a cobertura de testes no código da aplicação, após rodar o _grumphp_,
